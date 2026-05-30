@@ -52,7 +52,7 @@ Landscape view of the phone (phone being hold horizontally)
 - Each teacup-sentry's destruction grants 1 point.
 - If the player does not finish the level, the level score is only the enemy destruction score gathered so far. No time bonus is awarded.
 - If the player finishes the level, add a finish-time bonus to the enemy destruction score.
-- Count the time player needed to finish the level. The finish-time bonus is based on the remaining time from a 5 minute limit. Convert the remaining time into seconds, divide by 10, and round after division. If 5 minutes - player time < 0, then round it to 0.
+- Count the time player needed to finish the level. The finish-time bonus is based on the remaining time from a 3 minute limit. Convert the remaining time into seconds, divide by 10, and round after division. If 3 minutes - player time < 0, then round it to 0.
 
 ### Losing:
 - Princess' health points recude to 0.

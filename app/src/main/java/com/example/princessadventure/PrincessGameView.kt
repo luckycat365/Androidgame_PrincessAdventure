@@ -15,7 +15,7 @@ import kotlin.math.roundToInt
 
 class PrincessGameView(context: Context) : SurfaceView(context), Runnable, SurfaceHolder.Callback {
     private val assets = GameAssets(context)
-    private val levelSegmentCount = 5
+    private val levelSegmentCount = 10
     private val levelSegmentWidth = 3400f
     private val worldWidth = levelSegmentWidth * levelSegmentCount
     private val worldHeight = 720f
@@ -23,7 +23,16 @@ class PrincessGameView(context: Context) : SurfaceView(context), Runnable, Surfa
     private val princessSpriteFootCorrection = 22f
     private val princessSpriteHeight = 174f
     private val princessSpriteHalfWidth = princessSpriteHeight * 448f / 256f / 2f
-    private val levelTimeLimit = 300f * levelSegmentCount
+    private val levelTimeLimit = 180f
+    private val castleCollisionWidth = 205f
+    private val castleCollisionHeight = 230f
+    private val castleVisualScale = 2f
+    private val castleTransparentBottomPadding = 19f
+    private val castlePlatformTop = liftedY(650f)
+    private val castleCenterX = worldWidth - 225f
+    private val castleVisualBottomPadding = castleCollisionHeight *
+        castleVisualScale *
+        castleTransparentBottomPadding / assets.castle.height
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
@@ -39,7 +48,19 @@ class PrincessGameView(context: Context) : SurfaceView(context), Runnable, Surfa
     private val projectiles = mutableListOf<Projectile>()
     private val platforms: List<Platform>
     private val enemies: MutableList<TeacupEnemy>
-    private val castleRect = RectF(worldWidth - 300f, 420f, worldWidth - 95f, 650f)
+    private val endActionButton = RectF()
+    private val castleRect = RectF(
+        castleCenterX - castleCollisionWidth / 2f,
+        castlePlatformTop - castleCollisionHeight,
+        castleCenterX + castleCollisionWidth / 2f,
+        castlePlatformTop,
+    )
+    private val castleVisualRect = RectF(
+        castleCenterX - (castleCollisionWidth * castleVisualScale) / 2f,
+        castlePlatformTop + castleVisualBottomPadding - castleCollisionHeight * castleVisualScale,
+        castleCenterX + (castleCollisionWidth * castleVisualScale) / 2f,
+        castlePlatformTop + castleVisualBottomPadding,
+    )
     private var thread: Thread? = null
     @Volatile private var running = false
     private var lastFrameNanos = 0L
@@ -364,7 +385,7 @@ class PrincessGameView(context: Context) : SurfaceView(context), Runnable, Surfa
         for (platform in platforms) {
             canvas.drawBitmap(platform.bitmap, null, platform.rect, paint)
         }
-        canvas.drawBitmap(assets.castle, null, castleRect, paint)
+        canvas.drawBitmap(assets.castle, null, castleVisualRect, paint)
 
         val time = elapsed
         for (enemy in enemies) {
@@ -477,7 +498,6 @@ class PrincessGameView(context: Context) : SurfaceView(context), Runnable, Surfa
                 "Time bonus: $finalTimingScore",
                 "Level score: $finalLevelScore",
                 "Total score: $totalScore",
-                "Tap anywhere to play again",
             )
         } else {
             listOf(
@@ -489,6 +509,26 @@ class PrincessGameView(context: Context) : SurfaceView(context), Runnable, Surfa
         }
         lines.forEachIndexed { index, line ->
             canvas.drawText(line, width * 0.5f, panel.top + height * (0.22f + index * 0.075f), smallTextPaint)
+        }
+
+        if (gameState == GameState.Won) {
+            layoutEndActionButton(panel, width, height)
+            paint.color = Color.rgb(255, 128, 189)
+            canvas.drawRoundRect(endActionButton, 26f, 26f, paint)
+            paint.color = Color.rgb(255, 245, 251)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 4f
+            canvas.drawRoundRect(endActionButton, 26f, 26f, paint)
+            paint.style = Paint.Style.FILL
+
+            textPaint.color = Color.WHITE
+            textPaint.textSize = height * 0.043f
+            canvas.drawText(
+                "Proceed",
+                endActionButton.centerX(),
+                endActionButton.centerY() - (textPaint.ascent() + textPaint.descent()) / 2f,
+                textPaint,
+            )
         }
     }
 
@@ -503,13 +543,34 @@ class PrincessGameView(context: Context) : SurfaceView(context), Runnable, Surfa
         jumpControl.rect.set(w - w * 0.05f - size, bottom - size, w - w * 0.05f, bottom)
     }
 
+    private fun layoutEndActionButton(panel: RectF, width: Float, height: Float) {
+        val buttonWidth = width * 0.20f
+        val buttonHeight = height * 0.085f
+        val top = panel.bottom - height * 0.13f
+        endActionButton.set(
+            width * 0.5f - buttonWidth / 2f,
+            top,
+            width * 0.5f + buttonWidth / 2f,
+            top + buttonHeight,
+        )
+    }
+
     private fun handleTap(x: Float, y: Float) {
         if (gameState == GameState.Starting) {
             gameState = GameState.Playing
             pointerPositions.clear()
             return
         }
-        if (gameState != GameState.Playing) {
+        if (gameState == GameState.Won) {
+            val screenWidth = width.toFloat()
+            val screenHeight = height.toFloat()
+            val panel = RectF(screenWidth * 0.24f, screenHeight * 0.18f, screenWidth * 0.76f, screenHeight * 0.78f)
+            layoutEndActionButton(panel, screenWidth, screenHeight)
+            if (endActionButton.contains(x, y)) resetGame()
+            pointerPositions.clear()
+            return
+        }
+        if (gameState == GameState.Lost) {
             resetGame()
             pointerPositions.clear()
             return
@@ -561,32 +622,125 @@ class PrincessGameView(context: Context) : SurfaceView(context), Runnable, Surfa
     }
 
     private fun createPlatforms(): List<Platform> {
-        val generatedPlatforms = mutableListOf<Platform>()
-        repeat(levelSegmentCount) { segment ->
-            val offset = segment * levelSegmentWidth
-            generatedPlatforms += Platform(liftedRect(offset + 0f, 650f, offset + 580f, 720f), assets.grassLong)
-            generatedPlatforms += Platform(liftedRect(offset + 560f, 590f, offset + 820f, 650f), assets.grassShort)
-            generatedPlatforms += Platform(liftedRect(offset + 875f, 525f, offset + 1125f, 585f), assets.cloud)
-            generatedPlatforms += Platform(liftedRect(offset + 1180f, 610f, offset + 1620f, 680f), assets.flowerBridge)
-            generatedPlatforms += Platform(liftedRect(offset + 1710f, 540f, offset + 2000f, 610f), assets.grassRound)
-            generatedPlatforms += Platform(liftedRect(offset + 2110f, 470f, offset + 2410f, 540f), assets.crystal)
-            generatedPlatforms += Platform(liftedRect(offset + 2490f, 590f, offset + 2860f, 660f), assets.grassLong)
-            generatedPlatforms += Platform(liftedRect(offset + 2920f, 650f, offset + levelSegmentWidth, 720f), assets.grassLong)
+        return levelPlatformBlueprints().map { platform ->
+            Platform(liftedRect(platform.left, platform.top, platform.right, platform.bottom), platform.asset.bitmap())
         }
-        return generatedPlatforms
     }
 
     private fun createEnemies(): MutableList<TeacupEnemy> {
-        val generatedEnemies = mutableListOf<TeacupEnemy>()
-        repeat(levelSegmentCount) { segment ->
-            val offset = segment * levelSegmentWidth
-            val platformOffset = segment * 8
-            generatedEnemies += TeacupEnemy(x = offset + 710f, y = liftedY(590f), platformIndex = platformOffset + 1)
-            generatedEnemies += TeacupEnemy(x = offset + 1430f, y = liftedY(610f), platformIndex = platformOffset + 3)
-            generatedEnemies += TeacupEnemy(x = offset + 2250f, y = liftedY(470f), platformIndex = platformOffset + 5)
-            generatedEnemies += TeacupEnemy(x = offset + 2700f, y = liftedY(590f), platformIndex = platformOffset + 6)
+        return levelPlatformBlueprints().mapIndexedNotNullTo(mutableListOf()) { index, platform ->
+            platform.enemyX?.let { x ->
+                TeacupEnemy(x = x, y = liftedY(platform.top), platformIndex = index)
+            }
         }
-        return generatedEnemies
+    }
+
+    private fun levelPlatformBlueprints(): List<PlatformBlueprint> {
+        val platforms = mutableListOf<PlatformBlueprint>()
+
+        fun add(
+            left: Float,
+            top: Float,
+            right: Float,
+            bottom: Float,
+            asset: PlatformAsset,
+            enemyX: Float? = null,
+        ) {
+            platforms += PlatformBlueprint(left, top, right, bottom, asset, enemyX)
+        }
+
+        add(0f, 650f, 580f, 720f, PlatformAsset.GrassLong)
+        add(650f, 610f, 910f, 670f, PlatformAsset.GrassShort, enemyX = 790f)
+        add(990f, 540f, 1260f, 600f, PlatformAsset.Cloud)
+        add(1370f, 455f, 1640f, 525f, PlatformAsset.Crystal, enemyX = 1510f)
+        add(1730f, 505f, 2020f, 575f, PlatformAsset.GrassRound)
+        add(2120f, 610f, 2510f, 680f, PlatformAsset.FlowerBridge, enemyX = 2320f)
+        add(2630f, 570f, 2920f, 640f, PlatformAsset.GrassRound)
+        add(3050f, 650f, 3720f, 720f, PlatformAsset.GrassLong, enemyX = 3420f)
+
+        add(3860f, 600f, 4160f, 660f, PlatformAsset.GrassShort)
+        add(4300f, 500f, 4580f, 560f, PlatformAsset.Cloud, enemyX = 4450f)
+        add(4710f, 390f, 4990f, 460f, PlatformAsset.Crystal)
+        add(5120f, 470f, 5360f, 540f, PlatformAsset.GrassRound)
+        add(5500f, 575f, 5910f, 645f, PlatformAsset.FlowerBridge, enemyX = 5720f)
+        add(6060f, 520f, 6320f, 580f, PlatformAsset.Cloud)
+        add(6450f, 650f, 7060f, 720f, PlatformAsset.GrassLong, enemyX = 6740f)
+
+        add(7210f, 585f, 7510f, 645f, PlatformAsset.GrassShort)
+        add(7640f, 510f, 7870f, 570f, PlatformAsset.Cloud)
+        add(8000f, 445f, 8290f, 515f, PlatformAsset.Crystal, enemyX = 8150f)
+        add(8410f, 360f, 8660f, 430f, PlatformAsset.Cloud)
+        add(8790f, 420f, 9100f, 490f, PlatformAsset.GrassRound)
+        add(9240f, 545f, 9650f, 615f, PlatformAsset.FlowerBridge, enemyX = 9460f)
+        add(9800f, 650f, 10380f, 720f, PlatformAsset.GrassLong)
+
+        add(10520f, 590f, 10790f, 650f, PlatformAsset.GrassShort, enemyX = 10660f)
+        add(10930f, 520f, 11180f, 580f, PlatformAsset.Cloud)
+        add(11340f, 625f, 11620f, 695f, PlatformAsset.GrassRound)
+        add(11770f, 560f, 12140f, 630f, PlatformAsset.FlowerBridge, enemyX = 11960f)
+        add(12280f, 475f, 12570f, 545f, PlatformAsset.Crystal)
+        add(12700f, 405f, 12950f, 465f, PlatformAsset.Cloud)
+        add(13090f, 505f, 13420f, 575f, PlatformAsset.GrassRound, enemyX = 13250f)
+        add(13570f, 650f, 14160f, 720f, PlatformAsset.GrassLong)
+
+        add(14290f, 590f, 14600f, 650f, PlatformAsset.GrassShort)
+        add(14760f, 485f, 15030f, 545f, PlatformAsset.Cloud, enemyX = 14900f)
+        add(15180f, 380f, 15460f, 450f, PlatformAsset.Crystal)
+        add(15610f, 465f, 15880f, 535f, PlatformAsset.GrassRound)
+        add(16020f, 555f, 16450f, 625f, PlatformAsset.FlowerBridge, enemyX = 16240f)
+        add(16600f, 630f, 17120f, 700f, PlatformAsset.GrassLong, enemyX = 16870f)
+
+        add(17280f, 560f, 17560f, 620f, PlatformAsset.Cloud)
+        add(17710f, 470f, 17990f, 540f, PlatformAsset.Crystal, enemyX = 17850f)
+        add(18130f, 535f, 18430f, 605f, PlatformAsset.GrassRound)
+        add(18590f, 440f, 18850f, 500f, PlatformAsset.Cloud)
+        add(18990f, 565f, 19410f, 635f, PlatformAsset.FlowerBridge, enemyX = 19200f)
+        add(19580f, 650f, 20140f, 720f, PlatformAsset.GrassLong)
+
+        add(20290f, 610f, 20560f, 670f, PlatformAsset.GrassShort)
+        add(20710f, 520f, 20980f, 580f, PlatformAsset.Cloud, enemyX = 20850f)
+        add(21130f, 430f, 21420f, 500f, PlatformAsset.Crystal)
+        add(21570f, 365f, 21830f, 425f, PlatformAsset.Cloud)
+        add(21980f, 450f, 22270f, 520f, PlatformAsset.GrassRound, enemyX = 22130f)
+        add(22420f, 560f, 22830f, 630f, PlatformAsset.FlowerBridge)
+        add(22990f, 650f, 23590f, 720f, PlatformAsset.GrassLong, enemyX = 23280f)
+
+        add(23740f, 590f, 24020f, 650f, PlatformAsset.GrassShort)
+        add(24180f, 515f, 24420f, 575f, PlatformAsset.Cloud)
+        add(24570f, 610f, 24900f, 680f, PlatformAsset.GrassRound, enemyX = 24740f)
+        add(25050f, 520f, 25420f, 590f, PlatformAsset.FlowerBridge)
+        add(25580f, 425f, 25860f, 495f, PlatformAsset.Crystal, enemyX = 25720f)
+        add(26000f, 490f, 26280f, 550f, PlatformAsset.Cloud)
+        add(26420f, 650f, 27000f, 720f, PlatformAsset.GrassLong)
+
+        add(27150f, 580f, 27440f, 640f, PlatformAsset.GrassShort, enemyX = 27300f)
+        add(27590f, 480f, 27870f, 540f, PlatformAsset.Cloud)
+        add(28020f, 390f, 28310f, 460f, PlatformAsset.Crystal)
+        add(28480f, 470f, 28770f, 540f, PlatformAsset.GrassRound, enemyX = 28630f)
+        add(28930f, 565f, 29340f, 635f, PlatformAsset.FlowerBridge)
+        add(29510f, 625f, 30060f, 695f, PlatformAsset.GrassLong, enemyX = 29800f)
+
+        add(30220f, 560f, 30520f, 620f, PlatformAsset.Cloud)
+        add(30690f, 455f, 30970f, 525f, PlatformAsset.Crystal, enemyX = 30840f)
+        add(31140f, 545f, 31440f, 615f, PlatformAsset.GrassRound)
+        add(31610f, 485f, 31990f, 555f, PlatformAsset.FlowerBridge, enemyX = 31810f)
+        add(32160f, 595f, 32510f, 665f, PlatformAsset.GrassLong)
+        add(32680f, 520f, 32960f, 580f, PlatformAsset.Cloud)
+        add(33100f, 560f, 33320f, 620f, PlatformAsset.Cloud)
+        add(worldWidth - 580f, 650f, worldWidth, 720f, PlatformAsset.GrassLong)
+
+        return platforms
+    }
+
+    private fun PlatformAsset.bitmap(): Bitmap {
+        return when (this) {
+            PlatformAsset.GrassShort -> assets.grassShort
+            PlatformAsset.GrassLong -> assets.grassLong
+            PlatformAsset.GrassRound -> assets.grassRound
+            PlatformAsset.FlowerBridge -> assets.flowerBridge
+            PlatformAsset.Crystal -> assets.crystal
+            PlatformAsset.Cloud -> assets.cloud
+        }
     }
 
     private fun liftedY(y: Float): Float = y - playfieldLift
@@ -610,6 +764,24 @@ class PrincessGameView(context: Context) : SurfaceView(context), Runnable, Surfa
     }
 
     private data class Platform(val rect: RectF, val bitmap: Bitmap)
+
+    private data class PlatformBlueprint(
+        val left: Float,
+        val top: Float,
+        val right: Float,
+        val bottom: Float,
+        val asset: PlatformAsset,
+        val enemyX: Float?,
+    )
+
+    private enum class PlatformAsset {
+        GrassShort,
+        GrassLong,
+        GrassRound,
+        FlowerBridge,
+        Crystal,
+        Cloud,
+    }
 
     private data class Control(
         val name: String,

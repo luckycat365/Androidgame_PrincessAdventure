@@ -22,16 +22,17 @@ Princess Star Adventure is a native Android game implemented as a simple custom 
 4. Draws HUD hearts, score, elapsed time, and touch controls.
 5. Draws a win or lose overlay when the level ends.
 
-World simulation uses a fixed logical height of `720` units and scales to the device's landscape screen height. The camera follows the princess horizontally through a wider `3400` unit level.
+World simulation uses a fixed logical height of `720` units and scales to the device's landscape screen height. The camera follows the princess horizontally through a `34,000` unit Level 1 route.
 
 ## Gameplay Systems
 
 - Princess movement supports left/right movement, single jump, double jump, wand attack, hurt state, and temporary invulnerability.
 - Magic star projectiles damage teacup sentries.
+- Level 1 uses a hand-authored platform blueprint list so the doubled route can mix grounded stretches, cloud steps, high crystal climbs, bridge drops, enemy patrols, and the final castle approach without repeating the same segment.
 - Teacup sentries patrol their assigned platform and require two hits to destroy.
 - The castle is the Level 1 goal.
 - Princess starts with two health points. Hearts are drawn from `assets/images/PrincessStarAdventure/ui/heart-health.png`.
-- Level score is enemy destruction score plus time bonus. The time bonus is based on remaining time from a five-minute limit.
+- Level score is enemy destruction score plus time bonus. The time bonus is based on remaining time from a three-minute limit.
 
 ## Asset Loading
 

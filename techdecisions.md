@@ -30,7 +30,7 @@ Kotlin `2.0.21` is used because it is available in the local Gradle cache. A fir
 
 ## Gameplay Scope
 
-Level 1 is implemented as a single scrolling platform level using the available background, platform, castle, princess, projectile, teacup, sound, and HUD assets. The level includes:
+Level 1 is implemented as a single scrolling platform level using the available background, platform, castle, princess, projectile, teacup, sound, and HUD assets. The level route was expanded from repeated 3,400-unit segments into a doubled `34,000` unit hand-authored path. The first starting platform and final castle platform keep their original shape, while the middle of the route now uses varied platform heights, gaps, climbs, drops, and enemy patrol placements. The level includes:
 
 - touch movement buttons,
 - jump and double jump,
@@ -42,4 +42,4 @@ Level 1 is implemented as a single scrolling platform level using the available 
 - score/timer HUD,
 - victory and retry overlays.
 
-Future levels can be added by extracting the hardcoded platform/enemy layout in `PrincessGameView` into data classes or JSON level definitions.
+Future levels can be added by moving the platform blueprint list in `PrincessGameView` into JSON or another external level data format.
