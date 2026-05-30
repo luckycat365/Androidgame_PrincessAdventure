@@ -1,0 +1,41 @@
+{
+  "sheet": "fantasy-platforms-sheet.png",
+  "platforms": [
+    {
+      "name": "grass-short",
+      "image": "grass-short.png",
+      "width": 349,
+      "height": 230
+    },
+    {
+      "name": "grass-long",
+      "image": "grass-long.png",
+      "width": 347,
+      "height": 250
+    },
+    {
+      "name": "crystal",
+      "image": "crystal.png",
+      "width": 404,
+      "height": 226
+    },
+    {
+      "name": "cloud",
+      "image": "cloud.png",
+      "width": 420,
+      "height": 223
+    },
+    {
+      "name": "flower-bridge",
+      "image": "flower-bridge.png",
+      "width": 357,
+      "height": 240
+    },
+    {
+      "name": "grass-round",
+      "image": "grass-round.png",
+      "width": 316,
+      "height": 251
+    }
+  ]
+}

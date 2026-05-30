@@ -1,0 +1,18 @@
+{
+  "name": "Teacup Sentry",
+  "image": "teacup-sentry-walking.png",
+  "frameWidth": 256,
+  "frameHeight": 256,
+  "frames": 6,
+  "animations": {
+    "walking": "teacup-sentry-walking.png",
+    "hit": "hit/01.png",
+    "destroyed": "destroyed/01.png"
+  },
+  "frameDirectories": {
+    "walking": "walking/",
+    "hit": "hit/",
+    "destroyed": "destroyed/"
+  },
+  "facing": "left"
+}

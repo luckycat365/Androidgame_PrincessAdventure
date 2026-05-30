@@ -1,0 +1,24 @@
+# Agent/local workspace files
+AGENTS.md
+tmp/
+
+# Gradle and Android build output
+.gradle/
+build/
+*/build/
+
+# Android Studio and local machine files
+.idea/
+*.iml
+local.properties
+
+# Signing and secrets
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
