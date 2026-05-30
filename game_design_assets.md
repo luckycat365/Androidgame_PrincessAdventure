@@ -33,9 +33,9 @@ assets/
 - `castle/castle.png`: castle/environment prop.
 - `princess/`: player character animation frames.
 - `enemies/teacup-sentry/`: enemy sprite sheets, extracted animation frames, preview/source files, and metadata.
-- `platforms/fantasy/`: fantasy platform tiles, generated sheets, preview/source files, and metadata.
+- `platforms/level1/`: Level 1 platform tiles, generated sheets, preview/source files, and metadata.
 - `projectiles/star/star-projectile.png`: star projectile sprite.
-- `ui/`: mobile touch controls for attack, jump, left, and right.
+- `ui/`: mobile touch controls for attack, jump, left, and right, plus HUD icons such as health.
 
 ### Princess Character
 
@@ -45,8 +45,9 @@ Player animation frames live in:
 - `assets/images/PrincessStarAdventure/princess/running/`
 - `assets/images/PrincessStarAdventure/princess/jumping/`
 - `assets/images/PrincessStarAdventure/princess/attacking/`
+- `assets/images/PrincessStarAdventure/princess/hurt/`
 
-Each animation currently has six numbered PNG frames from `01.png` through `06.png`. Keep this naming pattern for new frame-based character animations.
+Standing, running, jumping, and attacking currently have six numbered PNG frames from `01.png` through `06.png`. Hurt currently has one frame at `01.png`. Keep this naming pattern for new frame-based character animations.
 
 ### Teacup Sentry Enemy
 
@@ -65,9 +66,9 @@ Important files:
 
 The metadata currently defines 256 x 256 walking frames, six walking frames, and a default `left` facing direction.
 
-### Fantasy Platforms
+### Level 1 Platforms
 
-Fantasy platform assets live in `assets/images/PrincessStarAdventure/platforms/fantasy/`.
+Level 1 platform assets live in `assets/images/PrincessStarAdventure/platforms/level1/`.
 
 Individual platform images:
 
@@ -88,19 +89,32 @@ Supporting files:
 
 When adding platform pieces, update `fantasy-platforms.json` with the display name, image filename, width, and height.
 
+## UI And HUD
+
+UI assets live in `assets/images/PrincessStarAdventure/ui/`.
+
+Current UI assets include:
+
+- `mobile-attack-button.png`
+- `mobile-jump-button.png`
+- `mobile-left-button.png`
+- `mobile-right-button.png`
+- `heart-health.png`: a 256 x 256 transparent heart icon for princess health.
+
 ## Audio
 
 Music tracks live directly under `assets/music/`:
 
-- `AI for Beauty.mp3`
-- `AP.mp3`
 - `ChasingLight.mp3`
 
 Princess Star Adventure sound effects live under `assets/sounds/PrincessStarAdventure/`:
 
-- `princess double jump.wav`
-- `star-attack.wav`
-- `teacup-crash.wav`
+- `princess/hurt.wav`
+- `princess/princess double jump.wav`
+- `princess/star-attack.wav`
+- `enemies/teacup/teacup-crash.wav`
+
+Sound effects are organized by owner or gameplay source. Put princess/player sounds under `princess/`, enemy sounds under `enemies/<enemy-name>/`, and keep filenames descriptive of the action they represent.
 
 ## Where To Put New Assets
 
@@ -120,7 +134,9 @@ Prefer descriptive lowercase names with hyphens for new folders and files. Exist
 
 ## How To Use Assets In The Android App
 
-Keep this root `assets/` directory as the source/design library. For Android runtime use, copy or convert selected shipping assets into conventional Android locations:
+Keep this root `assets/` directory as the source/design library. The current Android app also packages this folder directly through `app/build.gradle.kts` with `assets.srcDir("../assets")`, so game code can load these files by their documented relative paths.
+
+For Android runtime resources that need generated resource IDs, copy or convert selected shipping assets into conventional Android locations:
 
 - Put image assets used by Compose or Android resources under `app/src/main/res/drawable/` or density-specific drawable folders when appropriate.
 - Put music and sound effects that should ship with the app under `app/src/main/res/raw/`.

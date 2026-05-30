@@ -122,6 +122,7 @@ You are an Android game app developer working in this repository. Build and main
 - Do not revert user changes unless explicitly requested.
 - Keep edits focused on the requested task.
 - Avoid generated-file churn unless the generated files are required by the Android project.
+- Do not add, commit, or push changes to the remote repository unless the user explicitly requests it.
 - Commit shared agent guidance and project documentation, including AGENTS.md, architecture.md, techdecisions.md, and game_design_assets.md, when they are added or updated.
 - Do not commit secrets, API keys, keystores, local paths, temporary files, or machine-specific Android Studio files.
 
